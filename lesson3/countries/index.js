@@ -25,12 +25,22 @@ const searchBy = [
   new Value("unMember", "Am i union memeber?"),
 ];
 
-function drawOptionsElements(list, selectElRef) {
+const complexSearchBy = [
+  new Value("currencies", "currencies"),
+  new Value("languages", "languages"),
+]
+
+
+
+function drawOptionsElements(list, selectElRef, isCompex) {
   const optionsElements = list.map(function (searchByValue) {
     return _getOptionsElement(searchByValue);
   });
-  selectElRef.innerHTML = "";
+  if (!isCompex) {
+    selectElRef.innerHTML = "";
+  }
   selectElRef.append(...optionsElements);
+
   function _getOptionsElement(searchByValue) {
     const option = document.createElement("option");
     option.innerText = searchByValue.text;
@@ -42,7 +52,8 @@ let globalCountries = [];
 function init() {
   countries.push(null); // simulated as returned from API/Server
   globalCountries = countries.filter((c) => c);
-  drawOptionsElements(searchBy, document.querySelector("#searchBy"));
+  drawOptionsElements(searchBy, document.querySelector("#searchBy"), false);
+  drawOptionsElements(complexSearchBy, document.querySelector("#searchBy"), true);
   searchByChanged();
   document.querySelector("#filter").addEventListener("click", function () {
     const searchBy = document.querySelector("#searchBy").value;
@@ -65,11 +76,20 @@ init();
 
 function searchByChanged() {
   const selectedValue = document.querySelector("#searchBy").value;
-  const values = getList(selectedValue);
-  const result = values.map(function (currentRegion) {
-    return new Value(currentRegion, currentRegion.toUpperCase());
-  });
-  drawOptionsElements(result, document.querySelector("#searchValues"));
+  if (searchBy.map(function (c) { return c.value }).includes(selectedValue)) {
+    const values = getList(selectedValue);
+    const result = values.map(function (currentRegion) {
+      return new Value(currentRegion, currentRegion.toUpperCase());
+    });
+    drawOptionsElements(result, document.querySelector("#searchValues"), false);
+  }
+  else {
+    const values = getComplexData(`${selectedValue}`)
+    const result = values.map(function (currentRegion) {
+      return new Value(currentRegion, currentRegion.toUpperCase());
+    });
+    drawOptionsElements(result, document.querySelector("#searchValues"), false);
+  }
 }
 
 function getList(key) {
@@ -117,4 +137,24 @@ function getCurrencies() {
   }, {});
   console.log(Object.keys(distinctCu));
 }
-getCurrencies();
+
+function getComplexData(keyToAdd) {
+  const newKey = globalCountries.reduce(function (keyObj, country) {
+    const currentKey = country[`${keyToAdd}`];
+    if (!currentKey) return keyObj;
+    const keyKeys = Object.keys(currentKey);
+    keyKeys.forEach(function (key) {
+      keyObj[key] = true;
+    });
+    return keyObj;
+  }, {});
+  console.log(Object.keys(newKey));
+  return Object.keys(newKey)
+}
+
+getComplexData("languages")
+getComplexData("currencies")
+
+
+
+//getCurrencies();
